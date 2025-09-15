@@ -136,7 +136,7 @@ app.post("/api/change-password", authMiddleware, async (req, res) => {
 app.get("/api/logs", authMiddleware, (req, res) => {
   const query = `
     SELECT logs.id, 
-           COALESCE(profesores.nombre, 'Profesor eliminado') AS profesor, 
+           COALESCE(logs.profesor_nombre, profesores.nombre, 'Profesor eliminado') AS profesor, 
            casilleros.numero AS casillero, 
            logs.fecha_hora
     FROM logs
@@ -204,7 +204,7 @@ app.post("/abrir", (req, res) => {
   const { tarjeta, casillero } = req.body;
   if (!tarjeta || !casillero) return res.status(400).send("Faltan datos");
 
-  db.get("SELECT id FROM profesores WHERE tarjeta_uid = ?", [tarjeta], (err, profesor) => {
+  db.get("SELECT id, nombre FROM profesores WHERE tarjeta_uid = ?", [tarjeta], (err, profesor) => {
     if (!profesor) return res.status(404).send("Tarjeta no registrada");
 
     db.get("SELECT id FROM casilleros WHERE numero = ?", [casillero], (err, casilleroRow) => {
@@ -213,8 +213,8 @@ app.post("/abrir", (req, res) => {
       const fechaChile = moment().tz("America/Santiago").format("YYYY-MM-DD HH:mm:ss");
 
       db.run(
-        "INSERT INTO logs (profesor_id, casillero_id, fecha_hora) VALUES (?, ?, ?)",
-        [profesor.id, casilleroRow.id, fechaChile],
+        "INSERT INTO logs (profesor_id, profesor_nombre, casillero_id, fecha_hora) VALUES (?, ?, ?, ?)",
+        [profesor.id, profesor.nombre, casilleroRow.id, fechaChile],
         function (err) {
           if (err) return res.status(500).send("Error guardando log");
           res.send("Apertura registrada");
