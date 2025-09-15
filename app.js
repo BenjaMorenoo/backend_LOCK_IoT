@@ -4,6 +4,9 @@ const sqlite3 = require("sqlite3").verbose();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs"); // 👈 cambiado a bcryptjs
 
+const moment = require('moment-timezone'); // para cambiar la hora a chile
+
+
 const http = require("http");
 const { Server } = require("socket.io");
 
