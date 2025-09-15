@@ -135,7 +135,10 @@ app.post("/api/change-password", authMiddleware, async (req, res) => {
 // Logs
 app.get("/api/logs", authMiddleware, (req, res) => {
   const query = `
-    SELECT logs.id, profesores.nombre AS profesor, casilleros.numero AS casillero, logs.fecha_hora
+    SELECT logs.id, 
+           COALESCE(profesores.nombre, 'Profesor eliminado') AS profesor, 
+           casilleros.numero AS casillero, 
+           logs.fecha_hora
     FROM logs
     LEFT JOIN profesores ON logs.profesor_id = profesores.id
     LEFT JOIN casilleros ON logs.casillero_id = casilleros.id
@@ -160,6 +163,23 @@ app.get("/api/profesores", authMiddleware, (req, res) => {
   db.all("SELECT * FROM profesores", [], (err, rows) => {
     if (err) return res.status(500).send("Error obteniendo profesores");
     res.json(rows);
+  });
+});
+
+// Eliminar profesor (mantiene logs para historial)
+app.delete("/api/profesores/:id", authMiddleware, (req, res) => {
+  const { id } = req.params;
+  
+  // Verificar si el profesor existe
+  db.get("SELECT * FROM profesores WHERE id = ?", [id], (err, profesor) => {
+    if (err) return res.status(500).send("Error verificando profesor");
+    if (!profesor) return res.status(404).send("Profesor no encontrado");
+    
+    // Eliminar profesor directamente (los logs se mantienen para el historial)
+    db.run("DELETE FROM profesores WHERE id = ?", [id], function (err) {
+      if (err) return res.status(500).send("Error eliminando profesor");
+      res.send("Profesor eliminado correctamente. Los logs se mantienen para el historial.");
+    });
   });
 });
 
