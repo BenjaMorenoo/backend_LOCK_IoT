@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const sqlite3 = require("sqlite3").verbose();
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs"); // 👈 cambiado a bcryptjs
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -13,7 +13,7 @@ const app = express();
 const server = http.createServer(app); // <- servidor HTTP
 const io = new Server(server, {
   cors: {
-    origin: "https://eduarduino.cl", // tu frontend
+    origin: ["https://eduarduino.cl", "http://localhost:5173"], // tu frontend
     methods: ["GET", "POST"],
   },
 });
@@ -22,7 +22,7 @@ app.use(bodyParser.json());
 
 // habilitar CORS para todas las rutas REST
 app.use(cors({
-  origin: "https://eduarduino.cl",
+  origin: ["https://eduarduino.cl", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
@@ -187,10 +187,16 @@ app.post("/abrir", (req, res) => {
     db.get("SELECT id FROM casilleros WHERE numero = ?", [casillero], (err, casilleroRow) => {
       if (!casilleroRow) return res.status(404).send("Casillero no registrado");
 
-      db.run("INSERT INTO logs (profesor_id, casillero_id) VALUES (?, ?)", [profesor.id, casilleroRow.id], function (err) {
-        if (err) return res.status(500).send("Error guardando log");
-        res.send("Apertura registrada");
-      });
+      const fechaChile = moment().tz("America/Santiago").format("YYYY-MM-DD HH:mm:ss");
+
+      db.run(
+        "INSERT INTO logs (profesor_id, casillero_id, fecha_hora) VALUES (?, ?, ?)",
+        [profesor.id, casilleroRow.id, fechaChile],
+        function (err) {
+          if (err) return res.status(500).send("Error guardando log");
+          res.send("Apertura registrada");
+        }
+      );
     });
   });
 });
