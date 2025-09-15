@@ -175,10 +175,13 @@ app.delete("/api/profesores/:id", authMiddleware, (req, res) => {
     if (err) return res.status(500).send("Error verificando profesor");
     if (!profesor) return res.status(404).send("Profesor no encontrado");
     
+    // Log en consola mostrando qué tarjeta se está eliminando
+    console.log(`Eliminando profesor: ${profesor.nombre} (ID: ${profesor.id}) y su tarjeta RFID: ${profesor.tarjeta_uid || 'Sin tarjeta asignada'}`);
+    
     // Eliminar profesor directamente (los logs se mantienen para el historial)
     db.run("DELETE FROM profesores WHERE id = ?", [id], function (err) {
       if (err) return res.status(500).send("Error eliminando profesor");
-      res.send("Profesor eliminado correctamente. Los logs se mantienen para el historial.");
+      res.send(`Profesor ${profesor.nombre} y su tarjeta RFID eliminados correctamente. Los logs se mantienen para el historial.`);
     });
   });
 });
